@@ -1,7 +1,7 @@
-import { User } from "../models/user.model";
-import bcrypt from "bcryptjs";
+import { User } from "../models/user.model.js";
+import bcryptjs from "bcryptjs";
 import jwt from "jsonwebtoken";
-import mongoose from "mongoose";
+import { generateTokenAndSetCookie } from "../utils/generateTokenAndSetCookie";
 
 export const signup = async (req, res) => {
   const { email, password, name } = req.body;
@@ -22,7 +22,7 @@ export const signup = async (req, res) => {
       });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 12);
+    const hashedPassword = await bcryptjs.hash(password, 12);
 
     const user = new User({
       email,
@@ -60,7 +60,7 @@ export const login = async (req, res) => {
       });
     }
 
-    const isMatch = await bcrypt.compare(password, user.password);
+    const isMatch = await bcryptjs.compare(password, user.password);
 
     if (!isMatch) {
       return res.status(400).json({
@@ -69,18 +69,19 @@ export const login = async (req, res) => {
       });
     }
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-      expiresIn: "1d",
-    });
+    const token = generateTokenAndSetCookie(res, user._id);
 
-    res.json({
+    if (!token) {
+      return res.status(500).json({
+        success: false,
+        message: "Token generation failed",
+      });
+    }
+
+    res.status(200).json({
       success: true,
+      message: "User logged in successfully",
       token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-      },
     });
   } catch (error) {
     console.log("error", error);
