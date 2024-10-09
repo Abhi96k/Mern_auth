@@ -1,7 +1,7 @@
 import { User } from "../models/user.model.js";
 import bcryptjs from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { generateTokenAndSetCookie } from "../utils/generateTokenAndSetCookie";
+import { generateTokenAndSetCookie } from "../utils/generateTokenAndSetCookie.js";
 
 export const signup = async (req, res) => {
   const { email, password, name } = req.body;
@@ -83,7 +83,9 @@ export const login = async (req, res) => {
       message: "User logged in successfully",
       token,
     });
-  } catch (error) {
+
+  }
+  catch (error) {
     console.log("error", error);
   }
 };
