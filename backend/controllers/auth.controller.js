@@ -1,6 +1,7 @@
 import { User } from "../models/user.model";
 import bcrypt from "bcryptjs";
-
+import jwt from "jsonwebtoken";
+import mongoose from "mongoose";
 
 export const signup = async (req, res) => {
   const { email, password, name } = req.body;
@@ -40,21 +41,49 @@ export const signup = async (req, res) => {
   }
 };
 
-
 export const login = async (req, res) => {
-  try {
-    const { email, password } = req.body;
+  const { email, password } = req.body;
 
+  try {
     if (!email || !password) {
       return res.status(400).json({
         message: "All fields are required",
       });
     }
 
+    const user = await User.findOne({ email });
 
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid credentials",
+      });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    if (!isMatch) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid credentials",
+      });
+    }
+
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+      expiresIn: "1d",
+    });
+
+    res.json({
+      success: true,
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+      },
+    });
   } catch (error) {
-    console.log("there is issue for login");
-    console.log("Error", error);
+    console.log("error", error);
   }
 };
 
