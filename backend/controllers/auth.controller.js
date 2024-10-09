@@ -1,4 +1,6 @@
 import { User } from "../models/user.model";
+import bcrypt from "bcryptjs";
+
 
 export const signup = async (req, res) => {
   const { email, password, name } = req.body;
@@ -49,7 +51,6 @@ export const login = async (req, res) => {
       });
     }
 
-    const user=await User.
 
   } catch (error) {
     console.log("there is issue for login");
