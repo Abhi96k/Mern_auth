@@ -23,14 +23,19 @@ export const signup = async (req, res) => {
     }
 
     const hashedPassword = await bcryptjs.hash(password, 12);
+    const verificationToken = Math.floor(100000 + Math.random() * 900000);
 
     const user = new User({
       email,
       password: hashedPassword,
       name,
+      verificationToken,
+      verificationTokenExpiresAt: Date.now() + 10 * 60 * 1000,
     });
 
     await user.save();
+
+    generateTokenAndSetCookie(res, user._id);
 
     res.status(201).json({
       success: true,
@@ -69,9 +74,9 @@ export const login = async (req, res) => {
       });
     }
 
-    const token = generateTokenAndSetCookie(res, user._id);
+    const verificationToken = generateTokenAndSetCookie(res, user._id);
 
-    if (!token) {
+    if (!verificationToken) {
       return res.status(500).json({
         success: false,
         message: "Token generation failed",
@@ -81,11 +86,9 @@ export const login = async (req, res) => {
     res.status(200).json({
       success: true,
       message: "User logged in successfully",
-      token,
+      verificationToken,
     });
-
-  }
-  catch (error) {
+  } catch (error) {
     console.log("error", error);
   }
 };
