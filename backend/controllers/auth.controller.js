@@ -3,6 +3,7 @@ import bcryptjs from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { generateTokenAndSetCookie } from "../utils/generateTokenAndSetCookie.js";
 import { sendVerificationEmail } from "../mailtrap/emails.js";
+import { sendWelcomeEmail } from "../mailtrap/emails.js";
 
 export const signup = async (req, res) => {
   const { email, password, name } = req.body;
@@ -49,6 +50,41 @@ export const signup = async (req, res) => {
     });
   } catch (error) {
     console.log("error", error);
+  }
+};
+
+export const verifyEmail = async (req, res) => {
+  const { code } = req.body;
+  try {
+    const user = await User.findOne({
+      verificationToken: code,
+      verificationTokenExpiresAt: {
+        $gt: Date.now(),
+      },
+    });
+
+    if (!user) {
+      return res.status(400).json({
+        message: "Invalid code",
+      });
+    }
+
+    user.isVerified = true;
+    user.verificationToken = undefined;
+    user.verificationTokenExpiresAt = undefined;
+
+    await user.save();
+
+    await sendWelcomeEmail(user.email, user.name);
+
+    res.status(200).json({
+      success: true,
+      message: "Email verified successfully",
+      user,
+    });
+  } catch (error) {
+    console.log("error", error);
+    console.log(" code is not vaid please enter valid code");
   }
 };
 
