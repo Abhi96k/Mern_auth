@@ -33,11 +33,16 @@ export const signup = async (req, res) => {
       verificationTokenExpiresAt: Date.now() + 10 * 60 * 1000,
     });
 
+    console.log("user", user);
+
     await user.save();
 
     generateTokenAndSetCookie(res, user._id);
 
+    sendVerificationEmail(user.email, user.verificationToken);
+
     res.status(201).json({
+      user,
       success: true,
       message: "User created successfully",
     });
@@ -84,6 +89,7 @@ export const login = async (req, res) => {
     }
 
     res.status(200).json({
+      user,
       success: true,
       message: "User logged in successfully",
       verificationToken,
@@ -93,6 +99,23 @@ export const login = async (req, res) => {
   }
 };
 
-export const logout = (req, res) => {
-  res.send("logout route");
+export const logout = async (req, res) => {
+  try {
+    res.clearCookie("token", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "User logged out successfully",
+    });
+  } catch (error) {
+    console.log("error", error);
+    res.status(500).json({
+      success: false,
+      message: "Logout failed",
+    });
+  }
 };
